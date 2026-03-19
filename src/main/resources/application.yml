@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: busko-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/busko_db
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.spatial.dialect.postgis.PostgisDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
