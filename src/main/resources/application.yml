@@ -2,7 +2,7 @@ spring:
   application:
     name: busko-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/busko_db
+    url: jdbc:postgresql://localhost:5433/busko_db
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver
@@ -16,4 +16,4 @@ busko:
   websocket:
     # Comma-separated list of allowed WebSocket origins.
     # Override this in production with the exact front-end origin(s).
-    allowed-origins: http://localhost:3000
+    allowed-origins: "*"

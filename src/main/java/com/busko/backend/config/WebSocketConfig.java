@@ -34,8 +34,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // 1. Pure WebSocket endpoint for Mobile Apps (Flutter)
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(allowedOrigins)
+                .setAllowedOriginPatterns("*");
+
+        // 2. SockJS fallback endpoint for Web Browsers (React/Angular)
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 }
