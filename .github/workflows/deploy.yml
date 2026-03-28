@@ -26,6 +26,10 @@ jobs:
       # ── 3. Run tests ─────────────────────────────────────────────────────
       - name: Run tests
         run: ./mvnw clean test
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
       # ── 4. Build JAR ─────────────────────────────────────────────────────
       - name: Build JAR (skip tests – already ran above)
