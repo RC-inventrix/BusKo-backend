@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+busko:
+  websocket:
+    # TODO: Restrict to the actual frontend domain(s) before going fully public.
+    # e.g. allowed-origins: "https://your-flutter-app.example.com"
+    allowed-origins: "*"
