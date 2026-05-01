@@ -48,7 +48,6 @@ public class BusLocationController {
     @MessageMapping("/driver/update")
     public void handleDriverUpdate(LocationUpdateMessage message) {
         PassengerAlertMessage alert = geoService.processDriverUpdate(message);
-        messagingTemplate.convertAndSend(
-                "/topic/route-" + message.getRouteId(), alert);
+        messagingTemplate.convertAndSend("/topic/route-" + message.getRouteId(), alert);
     }
 }

@@ -110,10 +110,12 @@ public class GeoService {
      * location, received via a separate subscription or REST call.
      */
     private String calculateProximityStatus(double lat, double lng) {
+        // Check red threshold first (most urgent)
         if (!busLocationRepository
                 .findBusesWithinRadius(lat, lng, RED_THRESHOLD_METERS).isEmpty()) {
             return "Red";
         }
+        // Check yellow threshold (only if not red)
         if (!busLocationRepository
                 .findBusesWithinRadius(lat, lng, YELLOW_THRESHOLD_METERS).isEmpty()) {
             return "Yellow";
