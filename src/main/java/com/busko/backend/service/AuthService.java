@@ -1,40 +1,41 @@
 package com.busko.backend.service;
 
+import com.busko.backend.entity.Role;
 import com.busko.backend.entity.User;
 import com.busko.backend.repository.UserRepository;
-import java.util.Optional;
+import com.busko.backend.security.JwtUtil;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
-/**
- * Placeholder authentication service for the MVP phase.
- *
- * <p><b>SECURITY WARNING:</b> This service performs a plain-text password comparison.
- * It must <em>never</em> be used in production. Passwords must be hashed with a
- * strong algorithm (e.g. BCrypt via {@code PasswordEncoder}) before being stored,
- * and compared using a constant-time equals to prevent timing attacks.
- * Full JWT-based authentication with BCrypt password hashing will replace this
- * in the next development phase.
- */
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
-     * Attempts to authenticate a user by username and password.
-     *
-     * @param username the username to look up
-     * @param password the raw password to verify
-     * @return the matching {@link User} wrapped in an {@link Optional}, or
-     *         {@link Optional#empty()} if authentication fails
+     * Creates a new anonymous user in the database and generates a JWT for them.
      */
-    public Optional<User> login(String username, String password) {
-        // TODO: Replace plain-text comparison with BCryptPasswordEncoder
-        return userRepository.findByUsername(username)
-                .filter(user -> user.getPassword().equals(password));
+    public Map<String, String> initAnonymousUser(Role role) {
+        // 1. Create the frictionless user
+        User user = new User();
+        user.setRole(role);
+        user = userRepository.save(user);
+
+        // 2. Generate the silent JWT token using their new UUID
+        String token = jwtUtil.generateToken(user.getId());
+
+        // 3. Return both to the mobile app
+        Map<String, String> response = new HashMap<>();
+        response.put("userId", user.getId());
+        response.put("token", token);
+
+        return response;
     }
 }

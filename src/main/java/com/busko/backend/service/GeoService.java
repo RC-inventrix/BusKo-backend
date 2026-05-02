@@ -16,19 +16,11 @@ import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Handles incoming GPS updates from driver apps, persists bus locations, and
- * computes a proximity status for outbound passenger alerts.
- */
 @Service
 public class GeoService {
 
     private static final int SRID_WGS84 = 4326;
-
-    /** Radius (metres) below which a bus is considered "Red" (arriving soon). */
     private static final double RED_THRESHOLD_METERS = 300.0;
-
-    /** Radius (metres) below which a bus is considered "Yellow" (approaching). */
     private static final double YELLOW_THRESHOLD_METERS = 1000.0;
 
     private static final GeometryFactory GEOMETRY_FACTORY =
@@ -46,20 +38,6 @@ public class GeoService {
         this.routeRepository = routeRepository;
     }
 
-    /**
-     * Validates and persists the driver's GPS update, then returns a
-     * {@link PassengerAlertMessage} ready to be broadcast to passengers.
-     *
-     * <p>Data flow:
-     * <ol>
-     *   <li>Sanitise/validate the incoming coordinates.</li>
-     *   <li>Resolve the {@link Bus} and {@link Route} from the database.</li>
-     *   <li>Build a JTS {@link Point} (SRID 4326) and save a new
-     *       {@link BusLocation} record.</li>
-     *   <li>Determine the proximity status via the PostGIS ST_DWithin query.</li>
-     *   <li>Return the alert DTO that the controller will broadcast.</li>
-     * </ol>
-     */
     @Transactional
     public PassengerAlertMessage processDriverUpdate(LocationUpdateMessage message) {
         validateCoordinates(message.getLat(), message.getLng());
@@ -72,50 +50,30 @@ public class GeoService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Route not found: " + message.getRouteId()));
 
-        // JTS Point: X = longitude, Y = latitude (GeoJSON / PostGIS convention)
         Point location = GEOMETRY_FACTORY.createPoint(
                 new Coordinate(message.getLng(), message.getLat()));
 
-        BusLocation busLocation = new BusLocation();
+        // --- UPSERT LOGIC IMPLEMENTED HERE ---
+        BusLocation busLocation = busLocationRepository.findByBusId(bus.getId())
+                .orElse(new BusLocation()); // Get existing or create new
+
         busLocation.setBus(bus);
         busLocation.setRoute(route);
         busLocation.setLocation(location);
         busLocation.setTimestamp(Instant.now());
-        busLocationRepository.save(busLocation);
+
+        busLocationRepository.save(busLocation); // Automatically does UPDATE if ID exists
 
         String proximityStatus = calculateProximityStatus(message.getLat(), message.getLng());
         return new PassengerAlertMessage(
                 message.getBusId(), message.getLat(), message.getLng(), proximityStatus);
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
-    /**
-     * Determines whether the bus is "Red", "Yellow", or "Green" relative to
-     * other known bus locations via the PostGIS ST_DWithin radius query.
-     *
-     * <p>The query counts how many existing bus-location records fall within the
-     * given radius of the bus's current position:
-     * <ul>
-     *   <li><b>Red</b>   – at least one record within {@value #RED_THRESHOLD_METERS} m
-     *       (the bus is clustered with other buses / near a stop)</li>
-     *   <li><b>Yellow</b> – at least one record within {@value #YELLOW_THRESHOLD_METERS} m</li>
-     *   <li><b>Green</b>  – no records in either radius (bus is running freely)</li>
-     * </ul>
-     *
-     * <p>TODO: In production replace this with a passenger-centric proximity
-     * check that compares the bus location against the passenger's reported
-     * location, received via a separate subscription or REST call.
-     */
     private String calculateProximityStatus(double lat, double lng) {
-        // Check red threshold first (most urgent)
         if (!busLocationRepository
                 .findBusesWithinRadius(lat, lng, RED_THRESHOLD_METERS).isEmpty()) {
             return "Red";
         }
-        // Check yellow threshold (only if not red)
         if (!busLocationRepository
                 .findBusesWithinRadius(lat, lng, YELLOW_THRESHOLD_METERS).isEmpty()) {
             return "Yellow";

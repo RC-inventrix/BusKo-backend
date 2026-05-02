@@ -21,7 +21,7 @@ import org.locationtech.jts.geom.Point;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "bus_locations")
+@Table(name = "bus_current_location") // Updated table name
 public class BusLocation {
 
     @Id
