@@ -23,7 +23,8 @@ public class Route {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    // REMOVED unique = true so we can have multiple 138s (forward and return)
+    @Column(nullable = false)
     private String routeNumber;
 
     private String startLocation;
